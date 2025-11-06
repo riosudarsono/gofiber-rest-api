@@ -19,6 +19,7 @@ func NewCustomer(app *fiber.App, customerService domain.CustomerService) {
 	ca := customerApi{customerService}
 	app.Get("/customers", ca.Index)
 	app.Post("/customers", ca.Create)
+	app.Put("/customers/:id", ca.Update)
 }
 
 func (ca customerApi) Index(ctx *fiber.Ctx) error {
@@ -52,4 +53,32 @@ func (ca customerApi) Create(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(http.StatusCreated).JSON(dto.CreateResponseSuccess(""))
+}
+
+func (ca customerApi) Update(ctx *fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	var req dto.UpdateCustomerRequest
+	if err := ctx.BodyParser(&req); err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseError(err.Error()))
+	}
+
+	fails := util.Validate(req)
+	if len(fails) > 0 {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseErrorData("Validate Error", fails))
+	}
+
+	idInt, err := ctx.ParamsInt("id")
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseError("ID must be an Number"))
+	}
+
+	req.ID = int64(idInt)
+	err = ca.customerService.Update(c, req)
+	if err != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(err.Error()))
+	}
+
+	return ctx.Status(http.StatusOK).JSON(dto.CreateResponseSuccess(""))
 }

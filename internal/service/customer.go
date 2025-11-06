@@ -2,8 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"gofiber-rest-api/domain"
 	"gofiber-rest-api/dto"
+	"time"
 )
 
 type customerService struct {
@@ -23,7 +26,11 @@ func (c customerService) Index(ctx context.Context) ([]dto.CustomerData, error) 
 	}
 	var customerData []dto.CustomerData
 	for _, customer := range customers {
+		if !customer.ID.Valid {
+			continue
+		}
 		customerData = append(customerData, dto.CustomerData{
+			ID:   customer.ID.Int64,
 			Name: customer.Name,
 			Code: customer.Code,
 		})
@@ -37,4 +44,21 @@ func (c customerService) Create(ctx context.Context, req dto.CreateCustomerReque
 		Code: req.Code,
 	}
 	return c.customerRepo.Save(ctx, &customer)
+}
+
+func (c customerService) Update(ctx context.Context, req dto.UpdateCustomerRequest) error {
+	persisted, err := c.customerRepo.FindByID(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+	if persisted.ID == 0 {
+		return errors.New("customer not found")
+	}
+	persisted.Name = req.Name
+	persisted.Code = req.Code
+	persisted.UpdatedAt = sql.NullTime{
+		Valid: true,
+		Time:  time.Now(),
+	}
+	return c.customerRepo.Update(ctx, &persisted)
 }
