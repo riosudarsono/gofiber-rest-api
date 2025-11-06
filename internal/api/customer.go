@@ -20,6 +20,8 @@ func NewCustomer(app *fiber.App, customerService domain.CustomerService) {
 	app.Get("/customers", ca.Index)
 	app.Post("/customers", ca.Create)
 	app.Put("/customers/:id", ca.Update)
+	app.Delete("/customers/:id", ca.Delete)
+	app.Get("/customers/:id", ca.Show)
 }
 
 func (ca customerApi) Index(ctx *fiber.Ctx) error {
@@ -81,4 +83,38 @@ func (ca customerApi) Update(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(http.StatusOK).JSON(dto.CreateResponseSuccess(""))
+}
+
+func (ca customerApi) Delete(ctx *fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	idInt, err := ctx.ParamsInt("id")
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseError("ID must be an Number"))
+	}
+
+	errDelete := ca.customerService.Delete(c, int64(idInt))
+	if errDelete != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(errDelete.Error()))
+	}
+
+	return ctx.SendStatus(http.StatusNoContent)
+}
+
+func (ca customerApi) Show(ctx *fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.Context(), 10*time.Second)
+	defer cancel()
+
+	idInt, err := ctx.ParamsInt("id")
+	if err != nil {
+		return ctx.Status(http.StatusBadRequest).JSON(dto.CreateResponseError("ID must be an Number"))
+	}
+
+	data, errShow := ca.customerService.Show(c, int64(idInt))
+	if errShow != nil {
+		return ctx.Status(http.StatusInternalServerError).JSON(dto.CreateResponseError(errShow.Error()))
+	}
+
+	return ctx.Status(http.StatusOK).JSON(dto.CreateResponseSuccess(data))
 }

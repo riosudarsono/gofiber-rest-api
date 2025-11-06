@@ -62,3 +62,29 @@ func (c customerService) Update(ctx context.Context, req dto.UpdateCustomerReque
 	}
 	return c.customerRepo.Update(ctx, &persisted)
 }
+
+func (c customerService) Delete(ctx context.Context, id int64) error {
+	existing, err := c.customerRepo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if existing.ID == 0 {
+		return errors.New("customer not found")
+	}
+	return c.customerRepo.Delete(ctx, id)
+}
+
+func (c customerService) Show(ctx context.Context, id int64) (dto.CustomerData, error) {
+	persisted, err := c.customerRepo.FindByID(ctx, id)
+	if err != nil {
+		return dto.CustomerData{}, err
+	}
+	if persisted.ID == 0 {
+		return dto.CustomerData{}, errors.New("customer not found")
+	}
+	return dto.CustomerData{
+		ID:   persisted.ID,
+		Name: persisted.Name,
+		Code: persisted.Code,
+	}, err
+}
