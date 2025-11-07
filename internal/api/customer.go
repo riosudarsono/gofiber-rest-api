@@ -15,13 +15,13 @@ type customerApi struct {
 	customerService domain.CustomerService
 }
 
-func NewCustomer(app *fiber.App, customerService domain.CustomerService) {
+func NewCustomer(app *fiber.App, jwtMid fiber.Handler, customerService domain.CustomerService) {
 	ca := customerApi{customerService}
-	app.Get("/customers", ca.Index)
-	app.Post("/customers", ca.Create)
-	app.Put("/customers/:id", ca.Update)
-	app.Delete("/customers/:id", ca.Delete)
-	app.Get("/customers/:id", ca.Show)
+	app.Get("/customers", jwtMid, ca.Index)
+	app.Post("/customers", jwtMid, ca.Create)
+	app.Put("/customers/:id", jwtMid, ca.Update)
+	app.Delete("/customers/:id", jwtMid, ca.Delete)
+	app.Get("/customers/:id", jwtMid, ca.Show)
 }
 
 func (ca customerApi) Index(ctx *fiber.Ctx) error {
