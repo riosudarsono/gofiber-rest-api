@@ -25,12 +25,16 @@ func main() {
 
 	customerRepo := repository.NewCustomer(dbConnection)
 	authRepo := repository.NewUser(dbConnection)
+	bookRepo := repository.NewBook(dbConnection)
+	bookStockRepo := repository.NewBookStock(dbConnection)
 
 	customerService := service.NewCustomer(customerRepo)
 	authService := service.NewAuth(conf, authRepo)
+	bookService := service.NewBook(bookRepo, bookStockRepo)
 
 	api.NewCustomer(app, jwtMid_, customerService)
 	api.NewAuth(app, authService)
+	api.NewBook(app, jwtMid_, bookService)
 
 	_ = app.Listen(conf.Server.Host + ":" + conf.Server.Port)
 }
